@@ -1,20 +1,25 @@
 import "./styles/App.css";
 import { ShoppingCartProvider } from "./context/ShoppingCartContext.js";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Nav from "./components/Nav.jsx";
 import Home from "./pages/Home.jsx";
 import Checkout from "./components/Checkout.jsx";
+import ProductDetails from "./components/ProductDetails.jsx";
+
 function App() {
   return (
     <>
       <ShoppingCartProvider>
-        <BrowserRouter>
+        <Router>
           <Nav />
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path = "/checkout" element={<Checkout />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/checkout" element={<Checkout />} />
+            {/* Fallback or Default Route */}
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
-        </BrowserRouter>
+        </Router>
       </ShoppingCartProvider>
     </>
   );

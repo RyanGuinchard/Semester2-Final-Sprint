@@ -3,18 +3,21 @@ import { useEffect, useState } from "react";
 import useFetch from "../hooks/useFetch.jsx";
 import { useShoppingCart } from "../context/ShoppingCartContext.js";
 import addCartIcon from "../images/addCart.png";
+import { Link } from 'react-router-dom';
+import ProductDetails from "../components/ProductDetails.jsx";
 
 const Home = () => {
   const { data: products, loading, error } = useFetch('http://localhost:8080/products');
   const [displayedProducts, setDisplayedProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [shuffledProducts, setShuffledProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [sortOrder, setSortOrder] = useState("asc");
   const [sortButtonText, setSortButtonText] = useState("Price (Low to High)");
   const { addToCart, updateQuantity, cartItems } = useShoppingCart();
   const [quantities, setQuantities] = useState({});
   const [showAddedToCartAlert, setShowAddedToCartAlert] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [prodDetails, setProdDetails] = useState(false); 
   const chimeSound = new Audio('/AddtoCart.mp3');
   const categories = [
     'Clothing',
@@ -23,35 +26,27 @@ const Home = () => {
     'Seasonal'
   ];
 
+// Shuffle products every render
+useEffect(() => {
+  if (products) {
+    const shuffled = shuffleArray(products);
+    setShuffledProducts(shuffled);
+    setDisplayedProducts(shuffled);      
+  }
+}, [products]);
 
-  // Shuffle products every render
-  useEffect(() => {
-    if (products) {
-      const shuffled = shuffleArray(products);
-      setShuffledProducts(shuffled);
-      setDisplayedProducts(shuffled);      
-    }
-  }, [products]);
+const shuffleArray = (array) => {
+  const shuffledArray = [...array];
+  for (let i = shuffledArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledArray[i], shuffledArray[j]] = [
+      shuffledArray[j],
+      shuffledArray[i],
+    ];
+  }
+  return shuffledArray;
+};
 
-  // useEffect(() => {
-  //   setDisplayedProducts(shuffledProducts);
-  // }, [displayedProducts]);
-
-  // useEffect(() => {
-  //   setDisplayedProducts(shuffledProducts);
-  // }, [shuffledProducts]);
-
-  const shuffleArray = (array) => {
-    const shuffledArray = [...array];
-    for (let i = shuffledArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffledArray[i], shuffledArray[j]] = [
-        shuffledArray[j],
-        shuffledArray[i],
-      ];
-    }
-    return shuffledArray;
-  };
 
   const sortProducts = () => {
     let sortedProducts = [...displayedProducts];
@@ -109,7 +104,18 @@ const Home = () => {
     // Update displayed products
     setDisplayedProducts(filteredProducts);
   };
-  
+
+  // Function to handle selecting a product
+  const handleProductSelect = (product) => {
+    setSelectedProduct(product);
+    setProdDetails(true); // Update state to show product details
+  };
+
+  // Function to close the modal
+  const handleCloseProdDetails = () => {
+    prodDetails(false); // Corrected state variable name
+    setSelectedProduct(null);
+  };
 
   const handleQuantityChange = (product, quantity) => {
     setQuantities((prevQuantities) => ({
@@ -117,6 +123,7 @@ const Home = () => {
       [product.id]: quantity,
     }));
   };
+  
 
   const handleAddToCart = (product) => {
     const quantity = quantities[product.id] || 1; // Fetch the quantity for the product
@@ -131,18 +138,17 @@ const Home = () => {
     }, 3000);
     setQuantities((prevQuantities) => ({ ...prevQuantities, [product.id]: 1 }));
   };
-
   if (loading) {
     return <p>Loading...</p>;
   }
-
+  
   if (error) {
     return <p>Error: {error.message}</p>;
   }
-
+  
   return (
     <>
-    {showAddedToCartAlert && (
+      {showAddedToCartAlert && (
         <div className="addedToCartAlert">
           Added to cart!
         </div>
@@ -187,22 +193,62 @@ const Home = () => {
       <div className="productList">
         <div className="listedProduct">
           {displayedProducts.map((product, index) => (
-            // Card for Product
+
             <div className="item" key={product.id}>
               <div className="productTitle">
                 <h3 className="h3Title">{product.title}</h3>
               </div>
-
+              
               <div className="productImage">
                 <img
                   src={product.image}
                   alt={product.title}
                   className="image"
                 />
+                <button onClick={() => handleProductSelect(product)}>View Details</button>
               </div>
+    
+{/* Modal for displaying product details */}
+{selectedProduct && prodDetails && (
+  <div className="Shadow">
+    {loading && <p>Loading...</p>}
+    {error && <p>Error: {error}</p>}
+    {selectedProduct && prodDetails && (
+      <div className="DetailsFrame" key={selectedProduct.id}>
+        <div className="TitleFrame">
+          <h3 className="TitleText" id="title">{selectedProduct.title}</h3>
+        </div>
+        <div className="ImagePortrait">
+          <img
+            src={selectedProduct.image}
+            alt={selectedProduct.title}
+            className="image"
+          />
+        </div>
+        <div className="DescriptionFrame">
+          <p id="Desc">{selectedProduct.description}</p>
+        </div>
+        <p className="productPrice">${selectedProduct.price}</p>
+      </div>
+    )}
+    {products && (
+      <div className="ProductList">
+        <h4>Other Products:</h4>
+        <ul>
+          {products.map((product) => (
+            <li key={product.id} onClick={() => handleProductSelect(product)}>
+              {product.title}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+    <span className="close" onClick={handleCloseProdDetails}>&times;</span>
+    {selectedProduct && <ProductDetails product={selectedProduct} />}
+  </div>
+)}
 
               <p className="productPrice">${product.price}</p>
-              <div className="productDetails">
                 <div className="productActions">
                   <label>
                     Qty:
@@ -231,15 +277,12 @@ const Home = () => {
                         id = "addCartIcon"
                       />
                     </button>
-                  </div>
                 </div>
               </div>
             </div>
           ))}
-        </div>
-      </div>
-    </>
-  );
-};
-
-export default Home;
+          </div>
+          </div>
+          </>
+  )}
+  export default Home;
