@@ -8,12 +8,13 @@ const ProductDetailsModal = ({ product, onClose }) => {
   return (
     <div className="modalBackground">
       <div className="modalContainer">
+      <h3 className='h3Title'>{title}</h3>
         <button className="closeBtn" onClick={onClose || closeProductDetails}>X</button>
         <div className="productImage">
           <img src={image} alt={title} />
         </div>
+        <br />
         <div className="productDescription">
-          <h3>{title}</h3>
           <p>{description}</p>
         </div>
       </div>
